@@ -1,0 +1,17 @@
+{
+  "name": "merchant-webapp",
+  "type": "web-application",
+  "version": "0.1.0",
+  "language": "TypeScript",
+  "buildpack": "docker",
+  "appPath": "merchant-webapp",
+  "entrypoint": "deployment/web-application",
+  "exposure": "internet",
+  "dependencies": [
+    { "kind": "component", "name": "payments-api" },
+    { "kind": "platform-resource", "name": "user-auth", "resourceType": "thunder-app", "parameters": {} }
+  ],
+  "description": "The merchant-facing dashboard: business profile and KYC submission, creating and sharing payment links, transaction history, bank account setup, and payout/balance tracking. Does not host the customer checkout page and does not talk to any payment or payout provider directly — everything goes through payments-api.",
+  "stories": [1, 2, 4, 5, 9, 10, 11, 12, 13],
+  "skillsPinned": ["wireframes", "react-webapp", "oxygen-ui-design-system", "thunder-authentication"]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "payout-service",
+  "resource": {
+    "name": "payout-service",
+    "description": "Pays out a merchant's available balance to their linked bank account, on the platform's daily payout schedule."
+  },
+  "suggestions": [
+    { "name": "Flutterwave", "description": "Pan-African payments and payouts, including bank disbursements across many African countries." },
+    { "name": "Paystack", "description": "Payments and payouts focused on Nigeria and a growing set of African markets." },
+    { "name": "Cellulant", "description": "Pan-African payments switch with strong bank and mobile money payout reach." },
+    { "name": "MFS Africa", "description": "Cross-border mobile money and bank payout rails across Africa." }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "checkout-webapp",
+  "type": "web-application",
+  "version": "0.1.0",
+  "language": "TypeScript",
+  "buildpack": "docker",
+  "appPath": "checkout-webapp",
+  "entrypoint": "deployment/web-application",
+  "exposure": "internet",
+  "dependencies": [
+    { "kind": "component", "name": "payments-api" }
+  ],
+  "description": "The hosted checkout page a customer opens from a merchant's payment link: shows the amount, collects mobile money or card details, and shows the payment outcome. No sign-in — every visitor is a guest tied only to the link they opened. Does not talk to the payment gateway directly; payments-api handles authorization.",
+  "stories": [6, 7, 8],
+  "skillsPinned": ["wireframes", "react-webapp", "oxygen-ui-design-system"]
+}

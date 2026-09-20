@@ -1,0 +1,28 @@
+title Merchant Payments Africa
+
+component merchant-webapp as "Merchant Dashboard" web-application
+component admin-webapp as "Platform Admin Console" web-application
+component checkout-webapp as "Payment Checkout" web-application
+component payments-api as "Payments API" service
+component payments-db as "Payments Database" database
+
+east user-auth as "Thunder Auth" identity-server
+east payment-gateway as "Payment Gateway" service
+east email-service as "Email Service" service
+south payout-service as "Payout Service" service
+
+north -> merchant-webapp
+north -> checkout-webapp
+west -> admin-webapp
+
+merchant-webapp -> payments-api
+merchant-webapp -> user-auth
+admin-webapp -> payments-api
+admin-webapp -> user-auth
+checkout-webapp -> payments-api
+
+payments-api -> payments-db
+payments-api -> user-auth
+payments-api -> payment-gateway
+payments-api -> email-service
+payments-api -> payout-service

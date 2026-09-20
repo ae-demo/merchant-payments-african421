@@ -1,0 +1,624 @@
+openapi: 3.0.3
+info:
+  title: Payments API
+  version: 0.1.0
+servers:
+  - url: /
+security:
+  - oauth2: []
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Liveness check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+
+  /payment-links/{linkId}:
+    parameters:
+      - { name: linkId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getPublicPaymentLink
+      summary: Public payment-link details for the hosted checkout page
+      security: []
+      responses:
+        '200':
+          description: The payment link
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicPaymentLink' }
+        '404':
+          description: Link not found or expired
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /payment-links/{linkId}/pay:
+    parameters:
+      - { name: linkId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: payPaymentLink
+      summary: Pay a payment link with mobile money or a card
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentRequest' }
+      responses:
+        '200':
+          description: Payment outcome
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Transaction' }
+        '400':
+          description: Invalid request or link not payable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Link not found or expired
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /me/profile:
+    get:
+      operationId: getMyProfile
+      summary: The caller's own merchant profile
+      security:
+        - oauth2: [merchant-profile:read]
+      responses:
+        '200':
+          description: The merchant profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Merchant' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      operationId: updateMyProfile
+      summary: Update the caller's own merchant profile
+      security:
+        - oauth2: [merchant-profile:update]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MerchantInput' }
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Merchant' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /merchants:
+    get:
+      operationId: listMerchants
+      summary: Every merchant, for admin monitoring
+      security:
+        - oauth2: [merchant-profile:read-all]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+        - { name: kycStatus, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Matching merchants
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MerchantPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /merchants/{merchantId}:
+    parameters:
+      - { name: merchantId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getMerchant
+      summary: Any merchant by id, for admin monitoring
+      security:
+        - oauth2: [merchant-profile:read-all]
+      responses:
+        '200':
+          description: The merchant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Merchant' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /me/kyc-submissions:
+    get:
+      operationId: listMyKycSubmissions
+      summary: The caller's own KYC submissions
+      security:
+        - oauth2: [kyc-submissions:read]
+      responses:
+        '200':
+          description: The caller's KYC submissions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KycSubmissionPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      operationId: submitMyKyc
+      summary: Submit KYC documents for review
+      security:
+        - oauth2: [kyc-submissions:submit]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/KycSubmissionInput' }
+      responses:
+        '201':
+          description: Submission created, pending review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KycSubmission' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /kyc-submissions:
+    get:
+      operationId: listKycSubmissions
+      summary: Every KYC submission, for admin review
+      security:
+        - oauth2: [kyc-submissions:read-all]
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200':
+          description: Matching KYC submissions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KycSubmissionPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /kyc-submissions/{submissionId}/review:
+    parameters:
+      - { name: submissionId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: reviewKycSubmission
+      summary: Approve or reject a merchant's KYC submission
+      security:
+        - oauth2: [kyc-submissions:review]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/KycReviewInput' }
+      responses:
+        '200':
+          description: Submission reviewed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KycSubmission' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /me/payment-links:
+    get:
+      operationId: listMyPaymentLinks
+      summary: The caller's own payment links
+      security:
+        - oauth2: [payment-links:read]
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200':
+          description: The caller's payment links
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentLinkPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      operationId: createMyPaymentLink
+      summary: Create a new payment link
+      security:
+        - oauth2: [payment-links:create]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentLinkInput' }
+      responses:
+        '201':
+          description: Payment link created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentLink' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /me/payment-links/{linkId}:
+    parameters:
+      - { name: linkId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getMyPaymentLink
+      summary: A payment link the caller owns, with its status
+      security:
+        - oauth2: [payment-links:read]
+      responses:
+        '200':
+          description: The payment link
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentLink' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /me/transactions:
+    get:
+      operationId: listMyTransactions
+      summary: Transactions on the caller's own payment links
+      security:
+        - oauth2: [transactions:read]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200':
+          description: The caller's transactions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransactionPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /transactions:
+    get:
+      operationId: listTransactions
+      summary: Every transaction, for admin monitoring
+      security:
+        - oauth2: [transactions:read-all]
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200':
+          description: Matching transactions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransactionPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /me/bank-accounts:
+    get:
+      operationId: listMyBankAccounts
+      summary: The caller's own linked bank accounts
+      security:
+        - oauth2: [bank-accounts:manage]
+      responses:
+        '200':
+          description: The caller's bank accounts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BankAccountPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      operationId: linkMyBankAccount
+      summary: Link a bank account for payouts
+      security:
+        - oauth2: [bank-accounts:manage]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BankAccountInput' }
+      responses:
+        '201':
+          description: Bank account linked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BankAccount' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /me/payouts:
+    get:
+      operationId: listMyPayouts
+      summary: The caller's own payout history and current balance
+      security:
+        - oauth2: [payouts:read]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200':
+          description: The caller's payouts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PayoutPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /payouts:
+    get:
+      operationId: listPayouts
+      summary: Every payout, for admin monitoring
+      security:
+        - oauth2: [payouts:read-all]
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200':
+          description: Matching payouts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PayoutPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /payouts/{payoutId}/resolve:
+    parameters:
+      - { name: payoutId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: resolvePayout
+      summary: Retry or mark resolved a flagged/failed payout
+      security:
+        - oauth2: [payouts:manage]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PayoutResolutionInput' }
+      responses:
+        '200':
+          description: Payout updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payout' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /oauth2/authorize
+          tokenUrl: /oauth2/token
+          scopes:
+            merchant-profile:read: The caller's own merchant profile
+            merchant-profile:update: Update the caller's own merchant profile
+            merchant-profile:read-all: Every merchant profile
+            kyc-submissions:submit: Submit the caller's own KYC documents
+            kyc-submissions:read: The caller's own KYC submissions
+            kyc-submissions:read-all: Every KYC submission
+            kyc-submissions:review: Approve or reject a KYC submission
+            payment-links:create: Create a payment link for the caller's business
+            payment-links:read: The caller's own payment links
+            transactions:read: Transactions on the caller's own payment links
+            transactions:read-all: Every transaction
+            payouts:read: The caller's own payouts
+            payouts:read-all: Every payout
+            payouts:manage: Retry or resolve a flagged/failed payout
+            bank-accounts:manage: Link and view the caller's own bank accounts
+  responses:
+    BadRequest:
+      description: invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: caller's role does not permit this action
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: integer, description: HTTP or application error code }
+        message: { type: string, description: short human-readable label }
+        description: { type: string, description: detailed explanation }
+        moreInfo: { type: string, description: URI to documentation }
+
+    Merchant:
+      type: object
+      required: [id, businessName, email, country, kycStatus, balance, currency]
+      properties:
+        id: { type: string }
+        businessName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        country: { type: string }
+        kycStatus: { type: string, enum: [not-submitted, pending, approved, rejected] }
+        balance: { type: number }
+        currency: { type: string }
+    MerchantInput:
+      type: object
+      required: [businessName, email, country]
+      properties:
+        businessName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        country: { type: string }
+    MerchantPage:
+      type: object
+      required: [count, data]
+      properties:
+        count: { type: integer, description: total matching items }
+        next: { type: string, nullable: true, description: relative URI of the next page }
+        previous: { type: string, nullable: true, description: relative URI of the previous page }
+        data: { type: array, items: { $ref: '#/components/schemas/Merchant' } }
+
+    KycSubmission:
+      type: object
+      required: [id, merchantId, documentType, documentUrl, status]
+      properties:
+        id: { type: string }
+        merchantId: { type: string }
+        documentType: { type: string }
+        documentUrl: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        reviewedBy: { type: string }
+        reviewedAt: { type: string, format: date-time }
+    KycSubmissionInput:
+      type: object
+      required: [documentType, documentUrl]
+      properties:
+        documentType: { type: string }
+        documentUrl: { type: string }
+    KycReviewInput:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [approved, rejected] }
+        reason: { type: string }
+    KycSubmissionPage:
+      type: object
+      required: [count, data]
+      properties:
+        count: { type: integer, description: total matching items }
+        next: { type: string, nullable: true, description: relative URI of the next page }
+        previous: { type: string, nullable: true, description: relative URI of the previous page }
+        data: { type: array, items: { $ref: '#/components/schemas/KycSubmission' } }
+
+    PublicPaymentLink:
+      type: object
+      required: [id, merchantName, amount, currency, status]
+      properties:
+        id: { type: string }
+        merchantName: { type: string }
+        description: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        status: { type: string, enum: [pending, paid, expired, failed] }
+    PaymentLink:
+      type: object
+      required: [id, merchantId, amount, currency, status]
+      properties:
+        id: { type: string }
+        merchantId: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [pending, paid, expired, failed] }
+        expiresAt: { type: string, format: date-time }
+    PaymentLinkInput:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount: { type: number }
+        currency: { type: string }
+        description: { type: string }
+        expiresAt: { type: string, format: date-time }
+    PaymentLinkPage:
+      type: object
+      required: [count, data]
+      properties:
+        count: { type: integer, description: total matching items }
+        next: { type: string, nullable: true, description: relative URI of the next page }
+        previous: { type: string, nullable: true, description: relative URI of the previous page }
+        data: { type: array, items: { $ref: '#/components/schemas/PaymentLink' } }
+
+    PaymentRequest:
+      type: object
+      required: [method]
+      properties:
+        method: { type: string, enum: [mobile_money, card] }
+        phoneNumber: { type: string, description: required when method is mobile_money }
+        cardToken: { type: string, description: required when method is card }
+    Transaction:
+      type: object
+      required: [id, paymentLinkId, method, amount, currency, status]
+      properties:
+        id: { type: string }
+        paymentLinkId: { type: string }
+        method: { type: string, enum: [mobile_money, card] }
+        amount: { type: number }
+        currency: { type: string }
+        status: { type: string, enum: [succeeded, failed] }
+        payerReference: { type: string }
+        completedAt: { type: string, format: date-time }
+    TransactionPage:
+      type: object
+      required: [count, data]
+      properties:
+        count: { type: integer, description: total matching items }
+        next: { type: string, nullable: true, description: relative URI of the next page }
+        previous: { type: string, nullable: true, description: relative URI of the previous page }
+        data: { type: array, items: { $ref: '#/components/schemas/Transaction' } }
+
+    BankAccount:
+      type: object
+      required: [id, merchantId, bankName, accountNumber, accountName, verified]
+      properties:
+        id: { type: string }
+        merchantId: { type: string }
+        bankName: { type: string }
+        accountNumber: { type: string }
+        accountName: { type: string }
+        verified: { type: boolean }
+    BankAccountInput:
+      type: object
+      required: [bankName, accountNumber, accountName]
+      properties:
+        bankName: { type: string }
+        accountNumber: { type: string }
+        accountName: { type: string }
+    BankAccountPage:
+      type: object
+      required: [count, data]
+      properties:
+        count: { type: integer, description: total matching items }
+        next: { type: string, nullable: true, description: relative URI of the next page }
+        previous: { type: string, nullable: true, description: relative URI of the previous page }
+        data: { type: array, items: { $ref: '#/components/schemas/BankAccount' } }
+
+    Payout:
+      type: object
+      required: [id, merchantId, bankAccountId, amount, currency, status]
+      properties:
+        id: { type: string }
+        merchantId: { type: string }
+        bankAccountId: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        status: { type: string, enum: [pending, completed, failed, resolved] }
+        initiatedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+    PayoutResolutionInput:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [retry, mark-resolved] }
+        note: { type: string }
+    PayoutPage:
+      type: object
+      required: [count, data]
+      properties:
+        count: { type: integer, description: total matching items }
+        next: { type: string, nullable: true, description: relative URI of the next page }
+        previous: { type: string, nullable: true, description: relative URI of the previous page }
+        data: { type: array, items: { $ref: '#/components/schemas/Payout' } }

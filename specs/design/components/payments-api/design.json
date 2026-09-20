@@ -1,0 +1,20 @@
+{
+  "name": "payments-api",
+  "type": "service",
+  "version": "0.1.0",
+  "language": "Ballerina",
+  "buildpack": "docker",
+  "appPath": "payments-api",
+  "entrypoint": "deployment/service",
+  "exposure": "intranet",
+  "dependencies": [
+    { "kind": "platform-resource", "name": "payments-db", "resourceType": "postgres-cnpg", "parameters": {} },
+    { "kind": "platform-resource", "name": "user-auth", "resourceType": "thunder-app", "parameters": {} },
+    { "kind": "org-service", "name": "payment-gateway", "description": "Authorizes each hosted-checkout payment (mobile money or card, by channel) and reports its outcome." },
+    { "kind": "org-service", "name": "email-service", "description": "Sends payment confirmation and failure receipts to customers and merchants." },
+    { "kind": "external", "name": "payout-service", "description": "Disburses a merchant's daily payout to its linked bank account." }
+  ],
+  "description": "The backend for merchant onboarding/KYC, hosted payment links, checkout, transaction history, bank accounts, payouts and admin oversight. Owns all business data and every business rule; the three web apps are thin clients over it. Does not render any UI and does not talk to a payment or payout provider directly for anything other than authorizing a checkout payment or triggering a payout.",
+  "stories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  "skillsPinned": ["openapi-conventions", "ballerina", "api-management", "thunder-authentication"]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "admin-webapp",
+  "type": "web-application",
+  "version": "0.1.0",
+  "language": "TypeScript",
+  "buildpack": "docker",
+  "appPath": "admin-webapp",
+  "entrypoint": "deployment/web-application",
+  "exposure": "intranet",
+  "dependencies": [
+    { "kind": "component", "name": "payments-api" },
+    { "kind": "platform-resource", "name": "user-auth", "resourceType": "thunder-app", "parameters": {} }
+  ],
+  "description": "The internal console Platform Admin staff use to review and approve/reject merchant KYC submissions, monitor every merchant, transaction and payout, and act on flagged or failed payouts. Internal-only; never reachable from the public internet.",
+  "stories": [3, 14, 15],
+  "skillsPinned": ["wireframes", "react-webapp", "oxygen-ui-design-system", "thunder-authentication"]
+}
