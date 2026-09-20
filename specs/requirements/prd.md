@@ -92,4 +92,3 @@ a failed payout or transaction.
 
 1. What documents are required for KYC verification, and are there
 country-specific regulatory requirements to satisfy?
-
