@@ -1,0 +1,99 @@
+{
+  "version": 3,
+  "permissions": [
+    {
+      "resource": "merchant-profile",
+      "component": "payments-api",
+      "description": "A merchant's own business profile",
+      "actions": [
+        { "handle": "read", "description": "The caller's own merchant profile" },
+        { "handle": "update", "description": "Update the caller's own merchant profile" },
+        { "handle": "read-all", "description": "Every merchant profile" }
+      ]
+    },
+    {
+      "resource": "kyc-submissions",
+      "component": "payments-api",
+      "description": "Business/identity documents submitted for verification",
+      "actions": [
+        { "handle": "submit", "description": "Submit the caller's own KYC documents" },
+        { "handle": "read", "description": "The caller's own KYC submissions" },
+        { "handle": "read-all", "description": "Every KYC submission" },
+        { "handle": "review", "description": "Approve or reject a KYC submission" }
+      ]
+    },
+    {
+      "resource": "payment-links",
+      "component": "payments-api",
+      "description": "Payment links a merchant creates to request payment",
+      "actions": [
+        { "handle": "create", "description": "Create a payment link for the caller's business" },
+        { "handle": "read", "description": "The caller's own payment links" }
+      ]
+    },
+    {
+      "resource": "transactions",
+      "component": "payments-api",
+      "description": "Completed or failed payments against payment links",
+      "actions": [
+        { "handle": "read", "description": "Transactions on the caller's own payment links" },
+        { "handle": "read-all", "description": "Every transaction" }
+      ]
+    },
+    {
+      "resource": "payouts",
+      "component": "payments-api",
+      "description": "Disbursements of a merchant's balance to its bank account",
+      "actions": [
+        { "handle": "read", "description": "The caller's own payouts" },
+        { "handle": "read-all", "description": "Every payout" },
+        { "handle": "manage", "description": "Retry or resolve a flagged/failed payout" }
+      ]
+    },
+    {
+      "resource": "bank-accounts",
+      "component": "payments-api",
+      "description": "Bank accounts merchants link for payouts",
+      "actions": [
+        { "handle": "manage", "description": "Link and view the caller's own bank accounts" }
+      ]
+    }
+  ],
+  "groups": [],
+  "roles": [
+    {
+      "name": "Merchant",
+      "description": "Onboards its business, submits KYC, creates payment links, and tracks transactions and payouts.",
+      "stories": [1, 2, 4, 5, 9, 10, 11, 12, 13],
+      "grants": [
+        "merchant-profile:read",
+        "merchant-profile:update",
+        "kyc-submissions:submit",
+        "kyc-submissions:read",
+        "payment-links:create",
+        "payment-links:read",
+        "transactions:read",
+        "payouts:read",
+        "bank-accounts:manage"
+      ],
+      "enrolment": "self-service"
+    },
+    {
+      "name": "PlatformAdmin",
+      "description": "Internal staff who review merchant KYC submissions and monitor transactions and payouts across the platform.",
+      "stories": [3, 14, 15],
+      "grants": [
+        "merchant-profile:read-all",
+        "kyc-submissions:read-all",
+        "kyc-submissions:review",
+        "transactions:read-all",
+        "payouts:read-all",
+        "payouts:manage"
+      ],
+      "assignTo": ["PlatformAdmins"]
+    }
+  ],
+  "testUsers": [
+    { "username": "test-platform-admin", "roles": ["PlatformAdmin"] }
+  ]
+}
