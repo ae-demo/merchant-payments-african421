@@ -52,7 +52,7 @@ handles payout or dispute issues that need manual attention.
 
 - **Sign-in**: Merchants and Platform Admins sign in via SSO through Thunder,
 the platform IDP (organization default). Customers/Payers never sign in —
-paying a link is a guest action tied only to that link. *assumed*
+paying a link is a guest action tied only to that link.
 - **Merchant onboarding**: self-service signup followed by a KYC verification
 step; a merchant cannot collect live payments until a Platform Admin
 approves its submission.
@@ -64,10 +64,14 @@ processor is chosen at design time, not here.
 - **Settlement/payout**: collected funds accumulate as a merchant balance and
 are paid out to the merchant's linked bank account; the payout rail/provider
 is chosen at design time.
-- **Payout schedule**: payouts run on a regular automatic schedule (e.g.
-daily) rather than purely on-demand. *assumed*
+- **Payout schedule**: payouts run automatically once per day rather than
+purely on-demand.
 - **Notifications**: merchants and customers are notified of payment outcomes
-by email. *assumed*
+by email.
+- **Country coverage**: the platform targets major African markets broadly
+at launch, rather than a fixed, narrow country list; which specific mobile
+money networks and banking rails to integrate against is chosen at design
+time per country.
 - **Currency**: each payment is collected and reported in the local currency
 of the country the merchant operates in; no cross-currency conversion in
 this project. *assumed*
@@ -86,12 +90,6 @@ a failed payout or transaction.
 
 ## Open Questions
 
-1. Which African countries and mobile money networks must be supported at
- launch (e.g. M-Pesa in Kenya, MTN MoMo in Ghana/Uganda, Airtel Money)?
-2. Does the business already use, or is it required to use, a specific card
- payment processor?
-3. What payout schedule do merchants actually expect (daily, weekly, both, or
- configurable per merchant)?
-4. What documents are required for KYC verification, and are there
- country-specific regulatory requirements to satisfy?
+1. What documents are required for KYC verification, and are there
+country-specific regulatory requirements to satisfy?
 
