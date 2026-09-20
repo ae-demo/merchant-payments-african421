@@ -1,0 +1,110 @@
+openapi: 3.0.3
+info:
+  title: Flutterwave Transfers API (payout-service, subset)
+  version: v3
+  description: >
+    Derived from Flutterwave's own developer reference (v3 Transfers), covering only
+    the operations this project's daily payout run needs: initiating a bank
+    disbursement and checking its outcome. Uncertain areas: the exact set of
+    supported bank/country codes and the full webhook payload shape are not
+    modeled here — the design reads the transfer status by polling, not via
+    webhook.
+servers:
+  - url: https://api.flutterwave.com/v3
+security:
+  - bearerAuth: []
+paths:
+  /transfers:
+    post:
+      operationId: createTransfer
+      summary: Initiate a bank transfer (payout) to a merchant's linked account
+      x-aep-source: https://developer.flutterwave.com/reference/transfers_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_bank, account_number, amount, currency, reference]
+              properties:
+                account_bank: { type: string, description: bank code the payout is sent to }
+                account_number: { type: string }
+                amount: { type: number }
+                currency: { type: string, description: e.g. NGN, GHS, KES }
+                narration: { type: string }
+                reference: { type: string, description: caller-supplied unique reference for idempotency }
+                callback_url: { type: string, description: webhook URL Flutterwave notifies on completion }
+                debit_currency: { type: string }
+      responses:
+        '200':
+          description: Transfer initiated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferResponse' }
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Invalid or missing secret key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /transfers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string }, description: Flutterwave transfer id returned by createTransfer }
+    get:
+      operationId: getTransfer
+      summary: Retrieve a transfer's current status
+      x-aep-source: https://developer.flutterwave.com/reference/retrieve-a-transfer
+      responses:
+        '200':
+          description: The transfer
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferResponse' }
+        '404':
+          description: Transfer not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Invalid or missing secret key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    TransferResponse:
+      type: object
+      required: [status, data]
+      properties:
+        status: { type: string, enum: [success, error] }
+        message: { type: string }
+        data:
+          type: object
+          properties:
+            id: { type: integer }
+            account_number: { type: string }
+            bank_code: { type: string }
+            full_name: { type: string }
+            amount: { type: number }
+            currency: { type: string }
+            status: { type: string, enum: [NEW, PENDING, SUCCESSFUL, FAILED] }
+            reference: { type: string }
+            narration: { type: string }
+            complete_message: { type: string }
+            created_at: { type: string, format: date-time }
+    ErrorResponse:
+      type: object
+      required: [status, message]
+      properties:
+        status: { type: string, enum: [error] }
+        message: { type: string }

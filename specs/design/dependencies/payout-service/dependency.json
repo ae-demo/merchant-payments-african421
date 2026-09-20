@@ -2,12 +2,13 @@
   "name": "payout-service",
   "resource": {
     "name": "payout-service",
-    "description": "Pays out a merchant's available balance to their linked bank account, on the platform's daily payout schedule."
+    "description": "Pays out a merchant's available balance to their linked bank account, on the platform's daily payout schedule.",
+    "provider": "Flutterwave",
+    "config": [
+      { "key": "FLUTTERWAVE_SECRET_KEY", "secret": true, "description": "Flutterwave secret API key, from the Flutterwave dashboard API keys page" },
+      { "key": "FLUTTERWAVE_BASE_URL", "defaultValue": "https://api.flutterwave.com/v3", "description": "Flutterwave v3 API base URL" }
+    ],
+    "contract": { "type": "openapi", "path": "openapi.yaml", "origin": "derived" }
   },
-  "suggestions": [
-    { "name": "Flutterwave", "description": "Pan-African payments and payouts, including bank disbursements across many African countries." },
-    { "name": "Paystack", "description": "Payments and payouts focused on Nigeria and a growing set of African markets." },
-    { "name": "Cellulant", "description": "Pan-African payments switch with strong bank and mobile money payout reach." },
-    { "name": "MFS Africa", "description": "Cross-border mobile money and bank payout rails across Africa." }
-  ]
+  "provenance": { "sourceUrl": "https://developer.flutterwave.com/reference/transfers_post" }
 }
